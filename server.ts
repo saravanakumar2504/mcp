@@ -15,7 +15,7 @@ dotenv.config({
 import { Octokit } from "@octokit/rest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { tools } from "./tools/index.js";
+import { tools } from "./src/tools/index.js";
 
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
