@@ -2,13 +2,13 @@ import { z } from "zod";
 import type { Tool, ToolContext } from "./types.js";
 
 /**
- * List builds tool - retrieves top 10 commits from a branch (default: main)
+ * List builds tool - retrieves build reports and commit IDs for a project
  */
 export const listBuildsTool: Tool = {
   name: "list_builds",
   config: {
     title: "List Builds",
-    description: "Get top 10 commits from a branch (default: main)",
+    description: "List all recent builds, workflow runs, and commit history for a repository. Use this when user wants to see available builds, latest builds, all builds, recent commits, or workflow runs for a project.",
     inputSchema: {
       project: z.string().describe("Repository name"),
       branch: z.string().optional().describe("Branch name (defaults to 'main')"),
@@ -30,11 +30,10 @@ export const listBuildsTool: Tool = {
     });
 
     try {
-      const { data } = await octokit.repos.listCommits({
+      const { data } = await octokit.actions.listWorkflowRunsForRepo({
         owner: process.env.GITHUB_OWNER!,
         repo: project,
-        sha: branch, // Branch or commit SHA
-        per_page: 10, // Top 10 commits
+        branch: branch,
       });
 
       // Send structured log via MCP protocol
@@ -42,23 +41,22 @@ export const listBuildsTool: Tool = {
         level: "info",
         data: JSON.stringify({
           event: "list_builds_success",
-          count: data.length,
+          count: data.workflow_runs.length,
           repo: project,
           branch,
         }),
       });
 
-      const commits = data.map((commit) => ({
-        sha: commit.sha,
-        message: commit.commit.message,
-        author: commit.commit.author?.name,
-        email: commit.commit.author?.email,
-        date: commit.commit.author?.date,
-        url: commit.html_url,
+      const builds = data.workflow_runs.map((run) => ({
+        buildId: run.id,
+        commitId: run.head_sha,
+        status: run.status,
+        conclusion: run.conclusion,
+        date: run.created_at,
       }));
 
       return {
-        content: [{ type: "text", text: JSON.stringify(commits, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify(builds, null, 2) }],
       };
     } catch (error: any) {
       // Send error log via MCP protocol
