@@ -1,6 +1,9 @@
 import { z } from "zod";
 import AdmZip from "adm-zip";
 import type { Tool, ToolContext } from "./types.js";
+import { CacheManager } from "./cache.js";
+
+const bundleCache = new CacheManager<any>(60); // 60 minute TTL
 
 /**
  * Get bundle summary tool - retrieves bundle analysis for a specific build
@@ -19,6 +22,8 @@ export const getBundleSummaryTool: Tool = {
     { buildId, project }: { buildId: string; project: string },
     { octokit, server }: ToolContext
   ) => {
+    const cacheKey = `${project}:${buildId}`;
+
     await server.server.sendLoggingMessage({
       level: "info",
       data: JSON.stringify({
@@ -29,6 +34,23 @@ export const getBundleSummaryTool: Tool = {
     });
 
     try {
+      // Check cache first
+      const cached = bundleCache.get(cacheKey);
+      if (cached) {
+        await server.server.sendLoggingMessage({
+          level: "info",
+          data: JSON.stringify({
+            event: "get_bundle_summary_cache_hit",
+            buildId,
+            project,
+          }),
+        });
+
+        return {
+          content: [{ type: "text", text: JSON.stringify(cached, null, 2) }],
+        };
+      }
+
       // Step 1: Find workflow run for this commit (accepts short or full SHA)
       const workflowRun = await findWorkflowRun(octokit, project, buildId);
 
@@ -40,6 +62,9 @@ export const getBundleSummaryTool: Tool = {
 
       // Step 4: Format summary
       const summary = formatSummary(bundleData);
+
+      // Store in cache
+      bundleCache.set(cacheKey, summary);
 
       await server.server.sendLoggingMessage({
         level: "info",

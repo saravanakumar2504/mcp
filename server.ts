@@ -39,8 +39,30 @@ tools.forEach((tool) => {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-// Log server startup (will appear in client terminal via stderr)
 console.error("🚀 [MCP Server] bundle-analysis-mcp started and connected");
+
+/*
+{
+  "mcpServers": {
+    "bundle-analysis": {
+      "type": "http",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}
+
+
+{
+  "mcpServers": {
+    "bundle-analysis": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/Users/saravanakumar_kathirvel/projects/mcp/dist/server.js"
+      ]
+    }
+  }
+}*/
 
 //  cat "/Users/saravanakumar_kathirvel/Library/Application Support/Claude/claude_desktop_config.json"
 
