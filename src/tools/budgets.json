@@ -1,0 +1,12 @@
+{
+  "find-technicians": {
+    "maxTotalSize": "500 kB",
+    "maxPerRoute": "200 kB",
+    "maxSharedChunk": "150 kB"
+  },
+  "default": {
+    "maxTotalSize": "1 MB",
+    "maxPerRoute": "300 kB",
+    "maxSharedChunk": "200 kB"
+  }
+}
